@@ -192,7 +192,7 @@ def fetch_individual_recommendation(entity_id, target_entity_type, take):
         print(f"Error for entity {entity_id}: {e}")
         return []
     
-def get_recommendations(target_category, entity_id_json, take=5):
+def get_recommendations(target_category, entity_id_json, take=1):
     """
     For a given target category (e.g., 'movies'),
     fetch recommendations grouped by each entity_id, and return a list of lists of structured movie data.
@@ -521,26 +521,41 @@ Output format:
         print("Raw response:", text)
         return {}
     
-
 def find_entity_id(query, entity_type):
     """Search Qloo for an entity name and return its entity_id."""
     try:
+        if not query or not query.strip():
+            print(f"[WARN] Empty query received for type '{entity_type}'")
+            return None
+
         response = requests.get(
             f"{QLOO_BASE_URL}/search",
             headers={"x-api-key": QLOO_API_KEY},
             params={
-                "query": query,
+                "query": query.strip(),
                 "filter.type": entity_type,
                 "limit": 1
-            }
+            },
+            timeout=10  # Always add a timeout to avoid hanging
         )
         response.raise_for_status()
-        results = response.json().get("results", [])
-        if results:
-            return results[0].get("entity_id")
+
+        data = response.json()
+        results = data.get("results", [])
+
+        if results and "entity_id" in results[0]:
+            entity_id = results[0]["entity_id"]
+            if entity_id and isinstance(entity_id, str):
+                return entity_id
+
+        print(f"[WARN] No valid entity_id found for query '{query}' ({entity_type})")
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Request error for '{query}' ({entity_type}): {e}")
     except Exception as e:
-        print(f"Error getting entity ID for '{query}' ({entity_type}): {e}")
+        print(f"[ERROR] Unexpected error for '{query}' ({entity_type}): {e}")
+    
     return None
+
 
 def merge_and_map_entity_ids(recommendations: dict, preference_examples: dict) -> dict:
     """
