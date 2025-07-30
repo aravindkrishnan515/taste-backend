@@ -26,69 +26,86 @@ ENTITY_TYPE_MAP = {
     "music":"urn:entity:album"
 }
 
+# @app.route('/save-preferences', methods=['POST'])
+# def save_preferences():
+#     data = request.get_json()
+#     preferences = data.get('preferences')
+#     active_category = data.get('activeCategory', 'movies')  # Default to movies if not provided
+    
+#     print(f"\n==== Received preferences with active category: {active_category} ====\n")
+    
+#     examples = get_examples(preferences)
+    
+#     entity_json = map_names_to_entity_ids(examples)
+
+#     # Use the active category for recommendations
+#     recommendations = get_recommendations(active_category, entity_json)
+
+#     print(f"Initial seed recommendations: {examples}")
+#     print(f"Entity IDs mapped: {entity_json}")
+#     print(f"Final recommendations for {active_category}: {recommendations.get(active_category, [])}")
+    
+
+#     if recommendations:
+#         return jsonify({
+#             "status": "success",
+#             "recommendations": recommendations,
+#         }), 200
+#     else:
+#         return jsonify({"status": "error", "message": "Failed to generate recommendations", "preferences": preferences}), 500
+
 @app.route('/save-preferences', methods=['POST'])
 def save_preferences():
     data = request.get_json()
     preferences = data.get('preferences')
-    active_category = data.get('activeCategory', 'movies')  # Default to movies if not provided
-    
+    active_category = data.get('activeCategory', 'movies')
+
     print(f"\n==== Received preferences with active category: {active_category} ====\n")
-    
-    examples = get_examples(preferences)
-    
-    entity_json = map_names_to_entity_ids(examples)
 
-    # Use the active category for recommendations
-    recommendations = get_recommendations(active_category, entity_json)
+    try:
+        examples = get_examples(preferences)
+        entity_json = map_names_to_entity_ids(examples)
+        recommendations = get_recommendations(active_category, entity_json)
+        
+        print(f"Initial seed examples: {examples}")
+        print(f"Entity IDs mapped: {entity_json}")
+        print(f"Raw recommendations: {recommendations.get(active_category, [])}")
 
-    print(f"Initial seed recommendations: {examples}")
-    print(f"Entity IDs mapped: {entity_json}")
-    print(f"Final recommendations for {active_category}: {recommendations.get(active_category, [])}")
-    
+        movie_groups = recommendations.get(active_category, [])
 
-    # recommendation_groups = recommendations.get(active_category, [])
-    # description_data = []
+        enriched_groups = []
+        for group in movie_groups:
+            # Extract just the names to send to Gemini
+            names = [item.get("name") for item in group if item.get("name")]
+            if not names:
+                continue
 
-    # for group in recommendation_groups:
-    #     print(f"Generating description for group: {[item['name'] for item in group]}")
-    #     single_group_recommendations = {active_category: [group]}
-    #     try:
-    #         print(f"Calling Gemini to generate description for group: {single_group_recommendations}")
-    #         description = generate_group_descriptions(active_category, single_group_recommendations)
-    #         print(f"Description generated: {description}")
-    #         if description and description.get(active_category):
-    #             description_data.append(description[active_category][0])
-    #         time.sleep(1.5)  # ⏳ Throttle between Gemini calls
-    #     except Exception as e:
-    #         print(f"Error generating description for group: {e}")
+            # Generate title for this group using Gemini
+            try:
+                title = generate_group_title_from_names(names)
+            except Exception as e:
+                print(f"[WARN] Gemini failed for group: {names} — {e}")
+                title = "Recommended for You"
 
-    # descriptions = {active_category: description_data}
+            enriched_groups.append({
+                "title": title,
+                "items": group  # Original items with name & image
+            })
 
-
-
-    # print(f"descriptions for {active_category}: {descriptions}")
-    
-    # # Extract the actual recommendations and descriptions arrays
-    # recommendation_data = recommendations.get(active_category, [])
-    # description_data = descriptions.get(active_category, [])
-    
-    # print(f"Sending {len(recommendation_data)} recommendation groups and {len(description_data)} description groups")
-    
-    # # Log the structure of the first description group to verify format
-    # if description_data and len(description_data) > 0:
-    #     print(f"Sample description group structure: {description_data[0]}")
-    #     print(f"Title: {description_data[0][0].get('name', 'No title')}")
-    #     print(f"Description: {description_data[0][1].get('descriptions', 'No description')}")
-    # else:
-    #     print("No description data available")
-
-    if recommendations:
         return jsonify({
             "status": "success",
-            "recommendations": recommendations,
+            "category": active_category,
+            "recommendationGroups": enriched_groups
         }), 200
-    else:
-        return jsonify({"status": "error", "message": "Failed to generate recommendations", "preferences": preferences}), 500
+
+    except Exception as e:
+        print(f"[ERROR] in /save-preferences: {e}")
+        return jsonify({
+            "status": "error",
+            "message": "Failed to generate recommendations",
+            "error": str(e)
+        }), 500
+
 
 @app.route('/get-item-details', methods=['POST'])
 def get_item_details_endpoint():

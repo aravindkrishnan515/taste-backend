@@ -213,74 +213,21 @@ def get_recommendations(target_category, entity_id_json, take=1):
 
     return {target_category: grouped_recommendations}
 
-def generate_group_descriptions(category, grouped_recommendations):
+def generate_group_title_from_names(names):
     """
-    For each group of items (books, movies, etc.), use Gemini to generate:
-    - A genre/feel-based group title (e.g., "Dystopian Realities", "Epic Adventures")
-    - A warm, human-like description of the group's emotional tone or storytelling style
-
-    Output:
-    {
-      "movies": [
-        [ {"name": "Mind-Bending Thrillers"}, {"descriptions": "..." } ],
-        ...
-      ]
-    }
+    Given a list of recommendation names (titles), return a Gemini-generated group title.
     """
-    category = category.lower()
-    output = []
-    item_groups = grouped_recommendations.get(category, [])
+    prompt = (
+        "Given the following movie titles, generate a short, human-like title that reflects "
+        "their shared genre, emotional tone, or storytelling style:\n\n"
+        f"{', '.join(names)}\n\n"
+        "Return only the group title."
+    )
 
-    for group in item_groups:
-        item_names = [item["name"] for item in group if item.get("name")]
-        names_str = ", ".join(item_names)
+    # Make Gemini API call here (replace with actual Gemini call)
+    response = model.generate_content(prompt)
+    return response.text.strip() or "Recommended for You"
 
-        prompt = f"""You are a smart recommendation assistant.
-
-            Here is a group of {category.replace('_', ' ')} titles:
-            {names_str}
-
-            Your task:
-            1. Analyze the **tone, genre, vibe, or emotional theme** these titles share.
-            2. Write a **short, catchy group title** that captures that shared feeling or category. (Max 5–7 words)
-            3. Write a **1–2 sentence description** that explains what the experience is like when someone consumes this group — emotionally, stylistically, or narratively.
-
-            Format:
-            Title: <group title>
-            Description: <group description>
-            Don't list the names again.
-            Be warm and natural. Avoid dry or overly technical language.
-            """
-
-        try:
-            response = model.generate_content(prompt)
-            raw_text = response.text.strip()
-
-            # Parse Title and Description from Gemini response
-            title = ""
-            description = ""
-            for line in raw_text.splitlines():
-                if line.lower().startswith("title:"):
-                    title = line.split(":", 1)[1].strip()
-                elif line.lower().startswith("description:"):
-                    description = line.split(":", 1)[1].strip()
-
-            if not title or not description:
-                raise ValueError("Could not parse Gemini response.")
-
-            output.append([
-                { "name": title },
-                { "descriptions": description }
-            ])
-
-        except Exception as e:
-            print(f"Gemini API error for {category} group: {e}")
-            output.append([
-                { "name": "Uncategorized Group" },
-                { "descriptions": "No description available due to an API error." }
-            ])
-
-    return {category: output}
 
 def get_item_details(category: str, name: str):
     
