@@ -53,7 +53,9 @@ def save_preferences():
         print(f"Generating description for group: {[item['name'] for item in group]}")
         single_group_recommendations = {active_category: [group]}
         try:
+            print(f"Calling Gemini to generate description for group: {single_group_recommendations}")
             description = generate_group_descriptions(active_category, single_group_recommendations)
+            print(f"Description generated: {description}")
             if description and description.get(active_category):
                 description_data.append(description[active_category][0])
             time.sleep(1.5)  # ⏳ Throttle between Gemini calls
