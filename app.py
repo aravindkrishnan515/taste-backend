@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from recommendation import get_examples, map_names_to_entity_ids, get_recommendations, generate_group_descriptions, get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details
 
 from flask import Flask, request, jsonify
@@ -54,7 +55,7 @@ def save_preferences():
         description = generate_group_descriptions(active_category, single_group_recommendations)
         if description and description.get(active_category):
             description_data.append(description[active_category][0])
-
+        time.sleep(1.2)
     descriptions = {active_category: description_data}
 
 
