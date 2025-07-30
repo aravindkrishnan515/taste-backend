@@ -46,47 +46,46 @@ def save_preferences():
     print(f"Final recommendations for {active_category}: {recommendations.get(active_category, [])}")
     
 
-    recommendation_groups = recommendations.get(active_category, [])
-    description_data = []
+    # recommendation_groups = recommendations.get(active_category, [])
+    # description_data = []
 
-    for group in recommendation_groups:
-        print(f"Generating description for group: {[item['name'] for item in group]}")
-        single_group_recommendations = {active_category: [group]}
-        try:
-            print(f"Calling Gemini to generate description for group: {single_group_recommendations}")
-            description = generate_group_descriptions(active_category, single_group_recommendations)
-            print(f"Description generated: {description}")
-            if description and description.get(active_category):
-                description_data.append(description[active_category][0])
-            time.sleep(1.5)  # ⏳ Throttle between Gemini calls
-        except Exception as e:
-            print(f"Error generating description for group: {e}")
+    # for group in recommendation_groups:
+    #     print(f"Generating description for group: {[item['name'] for item in group]}")
+    #     single_group_recommendations = {active_category: [group]}
+    #     try:
+    #         print(f"Calling Gemini to generate description for group: {single_group_recommendations}")
+    #         description = generate_group_descriptions(active_category, single_group_recommendations)
+    #         print(f"Description generated: {description}")
+    #         if description and description.get(active_category):
+    #             description_data.append(description[active_category][0])
+    #         time.sleep(1.5)  # ⏳ Throttle between Gemini calls
+    #     except Exception as e:
+    #         print(f"Error generating description for group: {e}")
 
-    descriptions = {active_category: description_data}
+    # descriptions = {active_category: description_data}
 
 
 
-    print(f"descriptions for {active_category}: {descriptions}")
+    # print(f"descriptions for {active_category}: {descriptions}")
     
-    # Extract the actual recommendations and descriptions arrays
-    recommendation_data = recommendations.get(active_category, [])
-    description_data = descriptions.get(active_category, [])
+    # # Extract the actual recommendations and descriptions arrays
+    # recommendation_data = recommendations.get(active_category, [])
+    # description_data = descriptions.get(active_category, [])
     
-    print(f"Sending {len(recommendation_data)} recommendation groups and {len(description_data)} description groups")
+    # print(f"Sending {len(recommendation_data)} recommendation groups and {len(description_data)} description groups")
     
-    # Log the structure of the first description group to verify format
-    if description_data and len(description_data) > 0:
-        print(f"Sample description group structure: {description_data[0]}")
-        print(f"Title: {description_data[0][0].get('name', 'No title')}")
-        print(f"Description: {description_data[0][1].get('descriptions', 'No description')}")
-    else:
-        print("No description data available")
+    # # Log the structure of the first description group to verify format
+    # if description_data and len(description_data) > 0:
+    #     print(f"Sample description group structure: {description_data[0]}")
+    #     print(f"Title: {description_data[0][0].get('name', 'No title')}")
+    #     print(f"Description: {description_data[0][1].get('descriptions', 'No description')}")
+    # else:
+    #     print("No description data available")
 
     if recommendations:
         return jsonify({
             "status": "success",
-            "recommendations": recommendation_data,
-            "descriptions": description_data
+            "recommendations": recommendations,
         }), 200
     else:
         return jsonify({"status": "error", "message": "Failed to generate recommendations", "preferences": preferences}), 500
