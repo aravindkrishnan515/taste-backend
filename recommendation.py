@@ -213,20 +213,6 @@ def get_recommendations(target_category, entity_id_json, take=1):
 
     return {target_category: grouped_recommendations}
 
-def generate_group_title_from_names(names):
-    """
-    Given a list of recommendation names (titles), return a Gemini-generated group title.
-    """
-    prompt = (
-        "Given the following movie titles, generate a short, human-like title that reflects "
-        "their shared genre, emotional tone, or storytelling style:\n\n"
-        f"{', '.join(names)}\n\n"
-        "Return only the group title."
-    )
-
-    # Make Gemini API call here (replace with actual Gemini call)
-    response = model.generate_content(prompt)
-    return response.text.strip() or "Recommended for You"
 
 
 def get_item_details(category: str, name: str):

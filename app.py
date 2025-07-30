@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from recommendation import get_examples, map_names_to_entity_ids, get_recommendations,  generate_group_title_from_names, get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details
+from recommendation import get_examples, map_names_to_entity_ids, get_recommendations, get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -26,86 +26,33 @@ ENTITY_TYPE_MAP = {
     "music":"urn:entity:album"
 }
 
-# @app.route('/save-preferences', methods=['POST'])
-# def save_preferences():
-#     data = request.get_json()
-#     preferences = data.get('preferences')
-#     active_category = data.get('activeCategory', 'movies')  # Default to movies if not provided
-    
-#     print(f"\n==== Received preferences with active category: {active_category} ====\n")
-    
-#     examples = get_examples(preferences)
-    
-#     entity_json = map_names_to_entity_ids(examples)
-
-#     # Use the active category for recommendations
-#     recommendations = get_recommendations(active_category, entity_json)
-
-#     print(f"Initial seed recommendations: {examples}")
-#     print(f"Entity IDs mapped: {entity_json}")
-#     print(f"Final recommendations for {active_category}: {recommendations.get(active_category, [])}")
-    
-
-#     if recommendations:
-#         return jsonify({
-#             "status": "success",
-#             "recommendations": recommendations,
-#         }), 200
-#     else:
-#         return jsonify({"status": "error", "message": "Failed to generate recommendations", "preferences": preferences}), 500
-
 @app.route('/save-preferences', methods=['POST'])
 def save_preferences():
     data = request.get_json()
     preferences = data.get('preferences')
-    active_category = data.get('activeCategory', 'movies')
-
+    active_category = data.get('activeCategory', 'movies')  # Default to movies if not provided
+    
     print(f"\n==== Received preferences with active category: {active_category} ====\n")
+    
+    examples = get_examples(preferences)
+    
+    entity_json = map_names_to_entity_ids(examples)
 
-    try:
-        examples = get_examples(preferences)
-        entity_json = map_names_to_entity_ids(examples)
-        recommendations = get_recommendations(active_category, entity_json)
-        
-        print(f"Initial seed examples: {examples}")
-        print(f"Entity IDs mapped: {entity_json}")
-        print(f"Raw recommendations: {recommendations.get(active_category, [])}")
+    # Use the active category for recommendations
+    recommendations = get_recommendations(active_category, entity_json)
 
-        movie_groups = recommendations.get(active_category, [])
+    print(f"Initial seed recommendations: {examples}")
+    print(f"Entity IDs mapped: {entity_json}")
+    print(f"Final recommendations for {active_category}: {recommendations.get(active_category, [])}")
+    
 
-        enriched_groups = []
-        for group in movie_groups:
-            # Extract just the names to send to Gemini
-            names = [item.get("name") for item in group if item.get("name")]
-            if not names:
-                continue
-
-            # Generate title for this group using Gemini
-            try:
-                title = generate_group_title_from_names(names)
-            except Exception as e:
-                print(f"[WARN] Gemini failed for group: {names} — {e}")
-                title = "Recommended for You"
-
-            enriched_groups.append({
-                "title": title,
-                "items": group  # Original items with name & image
-            })
-
+    if recommendations:
         return jsonify({
             "status": "success",
-            "category": active_category,
-            "recommendationGroups": enriched_groups
+            "recommendations": recommendations,
         }), 200
-
-    except Exception as e:
-        print(f"[ERROR] in /save-preferences: {e}")
-        return jsonify({
-            "status": "error",
-            "message": "Failed to generate recommendations",
-            "error": str(e)
-        }), 500
-
+    else:
+        return jsonify({"status": "error", "message": "Failed to generate recommendations", "preferences": preferences}), 500
 
 @app.route('/get-item-details', methods=['POST'])
 def get_item_details_endpoint():
