@@ -233,11 +233,12 @@ def generate_group_descriptions(category, grouped_recommendations):
 
     for group in item_groups:
         item_names = [item["name"] for item in group if item.get("name")]
+        names_str = ", ".join(item_names)
 
         prompt = f"""You are a smart recommendation assistant.
 
             Here is a group of {category.replace('_', ' ')} titles:
-            {json.dumps(item_names, indent=2)}
+            {names_str}
 
             Your task:
             1. Analyze the **tone, genre, vibe, or emotional theme** these titles share.
