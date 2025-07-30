@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: qloo-flask-backend
+    env: python
+    buildCommand: ""
+    startCommand: python app.py
+    envVars:
+      - key: GOOGLE_API_KEY
+        value: AIzaSyA89I_rgHvhixmDRxjLEjPLWVLZfreqJG4
+      - key: QLOO_API_KEY
+        value: 0_E7gE3c60SsCWlugMEJ_OQFy9ACiNGB6Zzq8xkvVQg
