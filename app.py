@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from recommendation import get_examples, map_names_to_entity_ids, get_recommendations, get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details
+from recommendation import get_examples, map_names_to_entity_ids, get_recommendations, get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details, get_contrasting_examples, map_examples_to_entity_ids, get_recommendations_from_entity_ids, generate_descriptions_with_categories
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -222,9 +222,6 @@ def blend_recommendations():
     except Exception as e:
         print(f"Can't get blend recommendations: {e}")
         enriched_recommendations = []
-    
-
-
 
     return jsonify({
         "status": "success",
@@ -233,6 +230,40 @@ def blend_recommendations():
         "all_entity_ids": all_entity_ids
     }), 200
     
+@app.route('/swap_deck-recommendations', methods=['POST'])
+def swap_deck_recommendations():
+    data = request.get_json()
+    archetype = data.get('archetype')
+
+    print(f"\n==== Swap deck recommendations for {archetype} ====\n")
+
+    contrasting_examples = get_contrasting_examples(archetype)
+    print(f"Contrasting examples: {contrasting_examples}")
+
+    entity_ids = map_examples_to_entity_ids(contrasting_examples)
+
+    swap_deck_recommendations = get_recommendations_from_entity_ids(entity_ids)
+    print(f"Swap deck recommendations: {swap_deck_recommendations}")
+
+    all_titles_with_categories = []
+    for category, items in swap_deck_recommendations.items():
+        for item in items:
+            if 'name' in item:
+                all_titles_with_categories.append({
+                    "title": item['name'],
+                    "category": category  # e.g., movie, podcast, etc.
+                })
+    print(f"All titles with categories: {all_titles_with_categories}")
+
+    description_with_categories = generate_descriptions_with_categories(all_titles_with_categories)
+    print("desctription with categories is ", description_with_categories)
+    
+    return jsonify({
+        "status": "success",
+        "archetype": archetype,
+        "recommendations": description_with_categories
+    }), 200
+
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))  # Use Render-provided port if available

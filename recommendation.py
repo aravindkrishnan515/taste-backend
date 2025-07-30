@@ -812,3 +812,163 @@ def enrich_recommendations_with_details(recommendations: list, category: str):
             })
     
     return enriched_recommendations
+
+def get_contrasting_examples(archetype):
+    """
+    Given a taste archetype, call Gemini API and return contrasting recommendations
+    across movie, podcast, book, music, and TV.
+    """
+
+    prompt = f"""
+You are a taste contrast engine. Your job is to recommend cultural content that strongly contrasts
+with the taste archetype provided. The contrast should be in tone, worldview, energy, or theme.
+
+Archetype: "{archetype}"
+
+Give one **random** but meaningful example in each of the following categories:
+1. Movies
+2. Podcast
+3. Books
+4. Music (artist or album)
+5. tv_show
+
+Return the response in this exact JSON format:
+{{
+  "movies": "...",
+  "podcast": "...",
+  "books": "...",
+  "music": "...",
+  "tv_show": "..."
+}}
+"""
+
+    try:
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+
+        # Clean markdown formatting like ```json ... ```
+        cleaned = re.sub(r"^```json|^```|```$", "", text.strip(), flags=re.MULTILINE).strip()
+
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            return {"raw_text": text, "error": "Failed to parse JSON"}
+
+    except Exception as e:
+        return {"error": str(e)}
+
+def map_examples_to_entity_ids(contrast_examples):
+    """
+    Takes a dictionary of contrast examples (movie, podcast, etc.)
+    and returns a new dictionary mapping each category to its entity_id.
+    """
+    entity_ids = {}
+
+    for category, example_name in contrast_examples.items():
+        # Normalize category name to match ENTITY_TYPE_MAP keys
+        normalized_category = category.strip().lower()
+        
+        entity_type = ENTITY_TYPE_MAP.get(normalized_category)
+        if not entity_type:
+            print(f"[Warning] Unknown category: {category}")
+            continue
+        
+        # Call the entity lookup
+        entity_id = find_entity_id(example_name, entity_type)
+        if entity_id:
+            entity_ids[category] = entity_id
+        else:
+            print(f"[Info] No entity found for {example_name} under {category}")
+    
+    return entity_ids
+
+def get_recommendations_from_entity_ids(entity_id_map, take=1):
+    """
+    Given a mapping of category -> entity_id,
+    returns recommendations for each category by fetching via Qloo.
+    
+    Args:
+        entity_id_map (dict): {'movies': <entity_id>, 'music': <entity_id>, ...}
+        take (int): Number of recommendations to fetch per category
+    
+    Returns:
+        dict: {'movies': [{name, image}, ...], 'music': [...], ...}
+    """
+    recommendations = {}
+
+    for category, entity_id in entity_id_map.items():
+        # Normalize category to lowercase for consistent mapping
+        normalized_category = category.strip().lower()
+
+        # Get the corresponding Qloo entity type
+        entity_type = ENTITY_TYPE_MAP.get(normalized_category)
+        if not entity_type:
+            print(f"[Warning] Unknown category '{category}', skipping.")
+            continue
+
+        # Fetch recommendations using the entity_id and type
+        recs = fetch_individual_recommendation(entity_id, entity_type, take)
+        recommendations[category] = recs
+
+    return recommendations
+
+def generate_descriptions_with_categories(title_category_list):
+    """
+    Uses Gemini to generate 2-line factual descriptions for each title in the list.
+    Each item in the list should have 'title' and 'category'.
+    Returns a list of dicts with 'title', 'category', and 'description'.
+    """
+
+    prompt = (
+        "You are given a list of items, where each item is a dictionary with two fields:\n"
+        "- 'title': the name of a movie, book, podcast, music artist, or similar item\n"
+        "- 'category': the category it belongs to (e.g., 'movies', 'podcast', 'books', 'music')\n\n"
+
+        "Your task is to return a JSON list of dictionaries, where each item has the following fields:\n"
+        "- 'title' (string): the same title from input\n"
+        "- 'category' (string): the same category from input\n"
+        "- 'description' (string): a short, 2-line summary about what the title is about. Keep it clear, informative, and concise. Avoid stylistic tone commentary.\n\n"
+
+        "⚠️ Strict rules:\n"
+        "- Output only valid JSON, without markdown, explanations, or extra formatting\n"
+        "- Do not add extra fields\n"
+        "- Write the description as a factual summary (not emotional or thematic)\n\n"
+
+        "Example input:\n"
+        "[\n"
+        "  {\"title\": \"The Matrix\", \"category\": \"movies\"},\n"
+        "  {\"title\": \"Radiolab\", \"category\": \"podcast\"}\n"
+        "]\n\n"
+
+        "Example output:\n"
+        "[\n"
+        "  {\n"
+        "    \"title\": \"The Matrix\",\n"
+        "    \"category\": \"movies\",\n"
+        "    \"description\": \"A computer hacker learns about the true nature of reality and joins a rebellion against machines. A sci-fi action film with philosophical themes.\"\n"
+        "  },\n"
+        "  {\n"
+        "    \"title\": \"Radiolab\",\n"
+        "    \"category\": \"podcast\",\n"
+        "    \"description\": \"A podcast exploring scientific and philosophical questions through storytelling and sound design. Each episode dives into thought-provoking topics.\"\n"
+        "  }\n"
+        "]\n\n"
+
+        "Now return the JSON output for the following list:\n"
+        f"{json.dumps(title_category_list, indent=2)}"
+    )
+
+    try:
+        response = model.generate_content(prompt)
+        content = response.text.strip()
+        return json.loads(content)
+    except Exception as e:
+        print(f"Gemini error: {e}")
+        return [
+            {
+                "category": item['category'],
+                "title": item['title'],
+                "description": "Description unavailable."
+            }
+            for item in title_category_list
+        ]
