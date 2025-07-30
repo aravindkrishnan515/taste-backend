@@ -46,17 +46,22 @@ def save_preferences():
     print(f"Final recommendations for {active_category}: {recommendations.get(active_category, [])}")
     
 
-    # Build group descriptions incrementally
     recommendation_groups = recommendations.get(active_category, [])
     description_data = []
 
     for group in recommendation_groups:
+        print(f"Generating description for group: {[item['name'] for item in group]}")
         single_group_recommendations = {active_category: [group]}
-        description = generate_group_descriptions(active_category, single_group_recommendations)
-        if description and description.get(active_category):
-            description_data.append(description[active_category][0])
-        time.sleep(1.2)
+        try:
+            description = generate_group_descriptions(active_category, single_group_recommendations)
+            if description and description.get(active_category):
+                description_data.append(description[active_category][0])
+            time.sleep(1.5)  # ⏳ Throttle between Gemini calls
+        except Exception as e:
+            print(f"Error generating description for group: {e}")
+
     descriptions = {active_category: description_data}
+
 
 
     print(f"descriptions for {active_category}: {descriptions}")
