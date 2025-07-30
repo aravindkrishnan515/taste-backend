@@ -1,4 +1,5 @@
 import json
+import os
 from recommendation import get_examples, map_names_to_entity_ids, get_recommendations, generate_group_descriptions, get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details
 
 from flask import Flask, request, jsonify
@@ -250,8 +251,7 @@ def blend_recommendations():
         "all_entity_ids": all_entity_ids
     }), 200
     
-    
-
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True, port=5000)
+    port = int(os.environ.get("PORT", 5000))  # Use Render-provided port if available
+    app.run(host='0.0.0.0', port=port, debug=True)
