@@ -915,45 +915,34 @@ def get_recommendations_from_entity_ids(entity_id_map, take=1):
 def generate_descriptions_with_categories(title_category_list):
     """
     Uses Gemini to generate 2-line factual descriptions for each title in the list.
-    Each item in the list should have 'title' and 'category'.
     Returns a list of dicts with 'title', 'category', and 'description'.
     """
+    
 
     prompt = (
         "You are given a list of items, where each item is a dictionary with two fields:\n"
         "- 'title': the name of a movie, book, podcast, music artist, or similar item\n"
         "- 'category': the category it belongs to (e.g., 'movies', 'podcast', 'books', 'music')\n\n"
-
         "Your task is to return a JSON list of dictionaries, where each item has the following fields:\n"
         "- 'title' (string): the same title from input\n"
         "- 'category' (string): the same category from input\n"
-        "- 'description' (string): a short, 2-line summary about what the title is about. Keep it clear, informative, and concise. Avoid stylistic tone commentary.\n\n"
-
+        "- 'description' (string): a short, 2-line factual summary of what the title is about. No tone or emotional commentary.\n\n"
         "⚠️ Strict rules:\n"
-        "- Output only valid JSON, without markdown, explanations, or extra formatting\n"
+        "- Output only valid JSON — no markdown, explanations, or formatting\n"
         "- Do not add extra fields\n"
-        "- Write the description as a factual summary (not emotional or thematic)\n\n"
-
+        "- Ensure valid JSON array of objects is returned\n\n"
         "Example input:\n"
         "[\n"
-        "  {\"title\": \"The Matrix\", \"category\": \"movies\"},\n"
-        "  {\"title\": \"Radiolab\", \"category\": \"podcast\"}\n"
+        "  {\"title\": \"The Matrix\", \"category\": \"movies\"}\n"
         "]\n\n"
-
         "Example output:\n"
         "[\n"
         "  {\n"
         "    \"title\": \"The Matrix\",\n"
         "    \"category\": \"movies\",\n"
-        "    \"description\": \"A computer hacker learns about the true nature of reality and joins a rebellion against machines. A sci-fi action film with philosophical themes.\"\n"
-        "  },\n"
-        "  {\n"
-        "    \"title\": \"Radiolab\",\n"
-        "    \"category\": \"podcast\",\n"
-        "    \"description\": \"A podcast exploring scientific and philosophical questions through storytelling and sound design. Each episode dives into thought-provoking topics.\"\n"
+        "    \"description\": \"A hacker discovers a hidden virtual reality controlled by machines and joins a rebellion to free humanity.\"\n"
         "  }\n"
         "]\n\n"
-
         "Now return the JSON output for the following list:\n"
         f"{json.dumps(title_category_list, indent=2)}"
     )
@@ -961,7 +950,13 @@ def generate_descriptions_with_categories(title_category_list):
     try:
         response = model.generate_content(prompt)
         content = response.text.strip()
+
+        # Fix common Gemini mistakes if needed
+        if content.startswith("```json"):
+            content = content.replace("```json", "").replace("```", "").strip()
+
         return json.loads(content)
+
     except Exception as e:
         print(f"Gemini error: {e}")
         return [
