@@ -820,27 +820,35 @@ def get_contrasting_examples(archetype):
     """
 
     prompt = f"""
-You are a taste contrast engine. Your job is to recommend cultural content that strongly contrasts
+You are a taste contrast engine. Your job is to recommend cultural content that **strongly contrasts**
 with the taste archetype provided. The contrast should be in tone, worldview, energy, or theme.
 
 Archetype: "{archetype}"
 
-Give one **random** but meaningful example in each of the following categories:
+Generate a **different, meaningful, and randomly selected** example in each of the following categories:
 1. Movies
 2. Podcast
 3. Books
 4. Music (artist or album)
-5. tv_show
+5. TV Show
 
-Return the response in this exact JSON format:
+Guidelines:
+- Do NOT repeat examples from previous outputs.
+- Vary genres, time periods, and cultural backgrounds.
+- Avoid mainstream picks unless they’re uniquely contrasting.
+- Ensure each item clearly contrasts with the given archetype in mood, values, or storytelling.
+
+Return ONLY valid JSON in this exact format — no explanations, markdown, or extra text:
+
 {{
-  "movies": "...",
-  "podcast": "...",
-  "books": "...",
-  "music": "...",
-  "tv_show": "..."
+  "movies": "Movie Title",
+  "podcast": "Podcast Title",
+  "books": "Book Title",
+  "music": "Music Artist or Album",
+  "tv_show": "TV Show Title"
 }}
 """
+
 
     try:
         response = model.generate_content(prompt)
