@@ -192,7 +192,7 @@ def fetch_individual_recommendation(entity_id, target_entity_type, take):
         print(f"Error for entity {entity_id}: {e}")
         return []
     
-def get_recommendations(target_category, entity_id_json, take=1):
+def get_recommendations(target_category, entity_id_json, take=4):
     """
     For a given target category (e.g., 'movies'),
     fetch recommendations grouped by each entity_id, and return a list of lists of structured movie data.
@@ -528,7 +528,7 @@ def merge_and_map_entity_ids(recommendations: dict, preference_examples: dict) -
 
     return combined_ids
 
-def get_recommendations_for_activities(entity_id_json, activity_list, take=1):
+def get_recommendations_for_activities(entity_id_json, activity_list, take=3):
     all_recommendations = {}
 
     for category in activity_list:
