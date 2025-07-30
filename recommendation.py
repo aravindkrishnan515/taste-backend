@@ -8,12 +8,16 @@ import os
 
 from firebase_admin import credentials, firestore
 
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+QLOO_API_KEY = os.getenv("QLOO_API_KEY")
+
+print("Google API Key is:", GOOGLE_API_KEY)
+print("Qloo API Key is:", QLOO_API_KEY)
 
 # Configure Gemini API
-genai.configure(api_key="AIzaSyA89I_rgHvhixmDRxjLEjPLWVLZfreqJG4")
+genai.configure(api_key=GOOGLE_API_KEY)
 
 QLOO_BASE_URL = "https://hackathon.api.qloo.com"
-QLOO_API_KEY = "0_E7gE3c60SsCWlugMEJ_OQFy9ACiNGB6Zzq8xkvVQg"
 
 QLOO_Headers = {
     "x-api-key": QLOO_API_KEY
