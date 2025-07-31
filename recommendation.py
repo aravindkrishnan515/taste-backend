@@ -634,9 +634,12 @@ The user belongs to the following community: "{community_type}".
 
 Your task:
 - Choose any random community from the following:
-  ["Indie Explorer", "Global Gourmet", "Digital Dreamer", "Retro Nostalgic",
-   "Enlightened Seeker", "Pop Culture Buff", "Cultural Historian",
-   "Minimalist Curator", "Literary Wanderer", "Comfort Seeker"]
+  [
+    'Alt Pulse','Lyrical Romantic', 'Culture Hacker', 'Berry Bloom', 'Minimal Spirit', 'Mystic Pulse', 'Pop Dreamer', 
+    'Zen Zest', 'Hidden Flame', 'Wander Muse', 'Sunset Rebel', 'Cottage Noir', 'Neon Thinker', 'Kaleido Crafter', 
+    'Earth Artisan', 'Retro Soul', 'Cyber Chill', 'Tropic Vibist', 'Hyper Connector', 'Cine Nomad', 'Cloudwalker', 
+    'Vintage Flâneur', 'Joy Alchemist', 'Sunkissed Soul']
+
 
 Then:
 - Recommend three culturally fitting and specific items enjoyed by people from that opposite community:

@@ -99,6 +99,7 @@ def daily_recommendations():
         print(f"Preference examples: {preference_example}")
 
     entity_id_result = merge_and_map_entity_ids(recommendations, preference_example)
+    print(entity_id_result)
 
     entity_id_json = json.dumps(entity_id_result, indent=2)
     print(entity_id_json)
