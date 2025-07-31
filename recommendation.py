@@ -12,7 +12,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 QLOO_API_KEY = os.getenv("QLOO_API_KEY")
 
 print("Google API Key is:", GOOGLE_API_KEY)
-print("Qloo API Key is:", QLOO_API_KEY)
+print("Qloo API Key is:", QLOO_API_KEY)                                 
 
 # Configure Gemini API
 genai.configure(api_key=GOOGLE_API_KEY)
@@ -23,15 +23,15 @@ QLOO_Headers = {
     "x-api-key": QLOO_API_KEY
 }
 
-ENTITY_TYPE_MAP = {
+ENTITY_TYPE_MAP = {                         
     "movies": "urn:entity:movie",
     "books": "urn:entity:book",
     "travel": "urn:entity:place",
     "podcast":"urn:entity:podcast",
-    "videogame":"urn:entity:videogame",
+    "videogame":"urn:entity:videogame", 
     "video games":"urn:entity:videogame",
     "tv_show":"urn:entity:tv_show",
-    "tv shows":"urn:entity:tv_show",
+    "tv shows":"urn:entity:tv_show",                                                
     "music":"urn:entity:artist",
     "album":"urn:entity:album"
 }
