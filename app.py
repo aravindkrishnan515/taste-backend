@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from recommendation import get_examples, map_names_to_entity_ids, get_recommendations, get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details, get_contrasting_examples, map_examples_to_entity_ids, get_recommendations_from_entity_ids, generate_descriptions_with_categories
+from recommendation import get_examples, map_names_to_entity_ids, get_recommendations, get_single_example,  get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details, get_contrasting_examples, map_examples_to_entity_ids, get_recommendations_from_entity_ids, generate_descriptions_with_categories
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -26,33 +26,75 @@ ENTITY_TYPE_MAP = {
     "music":"urn:entity:album"
 }
 
+# @app.route('/save-preferences', methods=['POST'])
+# def save_preferences():
+#     data = request.get_json()
+#     preferences = data.get('preferences')
+#     active_category = data.get('activeCategory', 'movies')  # Default to movies if not provided
+    
+#     print(f"\n==== Received preferences with active category: {active_category} ====\n")
+    
+#     examples = get_examples(preferences)
+    
+#     entity_json = map_names_to_entity_ids(examples)
+
+#     # Use the active category for recommendations
+#     recommendations = get_recommendations(active_category, entity_json)
+
+#     print(f"Initial seed recommendations: {examples}")
+#     print(f"Entity IDs mapped: {entity_json}")
+#     print(f"Final recommendations for {active_category}: {recommendations.get(active_category, [])}")
+    
+
+#     if recommendations:
+#         return jsonify({
+#             "status": "success",
+#             "recommendations": recommendations,
+#         }), 200
+#     else:
+#         return jsonify({"status": "error", "message": "Failed to generate recommendations", "preferences": preferences}), 500
+
 @app.route('/save-preferences', methods=['POST'])
 def save_preferences():
     data = request.get_json()
-    preferences = data.get('preferences')
-    active_category = data.get('activeCategory', 'movies')  # Default to movies if not provided
-    
-    print(f"\n==== Received preferences with active category: {active_category} ====\n")
-    
-    examples = get_examples(preferences)
-    
-    entity_json = map_names_to_entity_ids(examples)
+    preference = data.get("preference")
+    category = data.get("activeCategory", "movies").lower()
 
-    # Use the active category for recommendations
-    recommendations = get_recommendations(active_category, entity_json)
+    print(f"\n===== Generating recommendations for preference: '{preference}' in category: '{category}' =====")
 
-    print(f"Initial seed recommendations: {examples}")
-    print(f"Entity IDs mapped: {entity_json}")
-    print(f"Final recommendations for {active_category}: {recommendations.get(active_category, [])}")
-    
+    # Step 1: Get example seeds
+    example_response = get_single_example(category, preference)
+    seed_examples = example_response.get("recommendations", [])
 
-    if recommendations:
+    if not seed_examples:
         return jsonify({
-            "status": "success",
-            "recommendations": recommendations,
-        }), 200
-    else:
-        return jsonify({"status": "error", "message": "Failed to generate recommendations", "preferences": preferences}), 500
+            "status": "error",
+            "message": "No seed examples generated.",
+            "recommendations": []
+        }), 500
+
+    entity_type = ENTITY_TYPE_MAP.get(category)
+    all_recommendations = []
+
+    # Step 2: For each seed example, get recommendations
+    for example in seed_examples:
+        try:
+            entity_id = find_entity_id(example, entity_type)
+            recs = fetch_individual_recommendation(entity_id, entity_type, take=5)
+            all_recommendations.append(recs)
+        except Exception as e:
+            print(f"❌ Failed to fetch recommendations for example '{example}': {e}")
+            all_recommendations.append([])
+
+    return jsonify({
+        "status": "success",
+        "category": category,
+        "preference": preference,
+        "seed_examples": seed_examples,
+        "recommendations": all_recommendations  # List of 2 × 5-item groups
+    }), 200
+
+
 
 @app.route('/get-item-details', methods=['POST'])
 def get_item_details_endpoint():

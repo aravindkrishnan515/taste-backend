@@ -39,38 +39,106 @@ ENTITY_TYPE_MAP = {
 # Create a model instance
 model = genai.GenerativeModel("gemini-2.5-flash")
 
-def get_examples(preferences):
+# def get_examples(preferences):
+#     prompt = f"""
+# You are a recommendation system that specializes in Western cultural preferences.
+
+# The user provides their preferences in the following categories: music, movies, food, books, and travel.
+
+# Here is the user's input:
+# {json.dumps(preferences, indent=2)}
+
+# Your task:
+# - For each input item under a category, generate 2 distinct and culturally relevant recommendations from Western culture.
+# - Every time this function is called, return a new set of suggestions (no repetition).
+# - Avoid using the same recommendations across different runs or input items.
+
+# Output format (only valid raw JSON, no explanation):
+# {{
+#   "music": [["example1", "example2"], ["example3", "example4"]],
+#   "movies": [["example1", "example2"], ["example3", "example4"]],
+#   "books": [["example1", "example2"], ["example3", "example4"]],
+#   "podcast": [["example1", "example2"], ["example3", "example4"]],
+#   "videogame": [["example1", "example2"], ["example3", "example4"]],
+#   "tv_show": [["example1", "example2"], ["example3", "example4"]],
+#   "travel": [["example1", "example2"], ["example3", "example4"]],
+#   "artist": [["example1", "example2"], ["example3", "example4"]],
+#   "albums": [["example1", "example2"], ["example3", "example4"]]
+# }}
+
+# ⚠️ Requirements:
+# - Categories must match user's input.
+# - Each value must be a list of arrays.
+# - Each array should have exactly 2 recommendations, related to the corresponding input item.
+# - Return only valid JSON. No notes, no markdown, no code blocks.
+# """
+
+#     try:
+#         response = model.generate_content(
+#             prompt,
+#             generation_config={
+#                 "temperature": 1.3,  # Add randomness
+#                 "top_p": 1.0,
+#                 "top_k": 40
+#             }
+#         )
+
+#         # Clean and extract JSON
+#         json_text = response.text.strip()
+
+#         if "```json" in json_text:
+#             json_text = json_text.split("```json")[-1].split("```")[0].strip()
+#         elif "```" in json_text:
+#             json_text = json_text.split("```")[-2].strip()
+
+#         print("Cleaned JSON text:", json_text)
+#         result = json.loads(json_text)
+
+#         # Ensure structure integrity
+#         for category in result:
+#             if not isinstance(result[category], list):
+#                 result[category] = []
+
+#         return result
+
+#     except Exception as e:
+#         print("Error parsing JSON:", e)
+#         print("Raw response:", response.text)
+
+#         # Fallback empty results
+#         fallback = {}
+#         if preferences:
+#             for category in preferences:
+#                 fallback[category] = [["No recommendation available", "Try again later"]
+#                                       for _ in preferences[category]]
+
+#         return fallback
+
+import json
+
+def get_single_example(category, preference):
     prompt = f"""
 You are a recommendation system that specializes in Western cultural preferences.
 
-The user provides their preferences in the following categories: music, movies, food, books, and travel.
-
-Here is the user's input:
-{json.dumps(preferences, indent=2)}
+The user has selected one preference in the category "{category}":
+- Preference: "{preference}"
 
 Your task:
-- For each input item under a category, generate 2 distinct and culturally relevant recommendations from Western culture.
-- Every time this function is called, return a new set of suggestions (no repetition).
-- Avoid using the same recommendations across different runs or input items.
+- Generate exactly 2 distinct and culturally relevant recommendations from Western culture that relate to this single input preference.
+- Make sure these are fresh and not repeated across runs.
+- Do NOT repeat results from any previous call.
 
-Output format (only valid raw JSON, no explanation):
+Return only **valid raw JSON**, no notes or explanations.
+
+Output format:
 {{
-  "music": [["example1", "example2"], ["example3", "example4"]],
-  "movies": [["example1", "example2"], ["example3", "example4"]],
-  "books": [["example1", "example2"], ["example3", "example4"]],
-  "podcast": [["example1", "example2"], ["example3", "example4"]],
-  "videogame": [["example1", "example2"], ["example3", "example4"]],
-  "tv_show": [["example1", "example2"], ["example3", "example4"]],
-  "travel": [["example1", "example2"], ["example3", "example4"]],
-  "artist": [["example1", "example2"], ["example3", "example4"]],
-  "albums": [["example1", "example2"], ["example3", "example4"]]
+  "recommendations": ["example1", "example2"]
 }}
 
 ⚠️ Requirements:
-- Categories must match user's input.
-- Each value must be a list of arrays.
-- Each array should have exactly 2 recommendations, related to the corresponding input item.
-- Return only valid JSON. No notes, no markdown, no code blocks.
+- The key must be exactly "recommendations"
+- Value must be an array of two unique items
+- No markdown, no code blocks, no extra formatting
 """
 
     try:
@@ -83,9 +151,9 @@ Output format (only valid raw JSON, no explanation):
             }
         )
 
-        # Clean and extract JSON
         json_text = response.text.strip()
 
+        # Clean and extract JSON
         if "```json" in json_text:
             json_text = json_text.split("```json")[-1].split("```")[0].strip()
         elif "```" in json_text:
@@ -94,25 +162,19 @@ Output format (only valid raw JSON, no explanation):
         print("Cleaned JSON text:", json_text)
         result = json.loads(json_text)
 
-        # Ensure structure integrity
-        for category in result:
-            if not isinstance(result[category], list):
-                result[category] = []
+        # Validate structure
+        if not isinstance(result.get("recommendations"), list) or len(result["recommendations"]) != 2:
+            return { "recommendations": ["Invalid", "Try again"] }
 
         return result
 
     except Exception as e:
         print("Error parsing JSON:", e)
-        print("Raw response:", response.text)
+        print("Raw response:", response.text if 'response' in locals() else '')
 
-        # Fallback empty results
-        fallback = {}
-        if preferences:
-            for category in preferences:
-                fallback[category] = [["No recommendation available", "Try again later"]
-                                      for _ in preferences[category]]
-
-        return fallback
+        return {
+            "recommendations": ["No recommendation", "Try again later"]
+        }
 
     
 def find_entity_id(query, entity_type):
@@ -528,7 +590,7 @@ def merge_and_map_entity_ids(recommendations: dict, preference_examples: dict) -
 
     return combined_ids
 
-def get_recommendations_for_activities(entity_id_json, activity_list, take=3):
+def get_recommendations_for_activities(entity_id_json, activity_list, take=1):
     all_recommendations = {}
 
     for category in activity_list:
