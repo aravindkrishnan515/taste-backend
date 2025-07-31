@@ -192,7 +192,7 @@ def fetch_individual_recommendation(entity_id, target_entity_type, take):
         print(f"Error for entity {entity_id}: {e}")
         return []
     
-def get_recommendations(target_category, entity_id_json, take=4):
+def get_recommendations(target_category, entity_id_json, take=3):
     """
     For a given target category (e.g., 'movies'),
     fetch recommendations grouped by each entity_id, and return a list of lists of structured movie data.
