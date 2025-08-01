@@ -164,6 +164,7 @@ def community_recommendations():
     
     try:
         example = get_community_example(archetype, category)
+        print("exemple is :", example)
         category = category.lower()
         entity_type = ENTITY_TYPE_MAP.get(category)
         entity_id = find_entity_id(example, entity_type)
