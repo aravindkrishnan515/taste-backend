@@ -87,7 +87,7 @@ def save_preferences():
             entity_id = find_entity_id(example, example_entity_type)
             if entity_id:
                 # Get metadata (name, image)
-                metadata = fetch_individual_recommendation(entity_id, active_entity_type, take=1)
+                metadata = fetch_individual_recommendation(entity_id, active_entity_type, take=5)
                 if metadata:
                     all_recommendations.extend(metadata)
         except Exception as e:
