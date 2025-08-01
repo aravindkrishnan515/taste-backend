@@ -73,7 +73,7 @@ Generate recommendations based on a single user preference in a category.
 ```
 
 **Returns**:
-- Seed examples
+- 2 Seed examples per each preference
 - 2 groups of 5 recommendations
 - Group titles and descriptions
 
