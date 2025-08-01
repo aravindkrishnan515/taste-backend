@@ -192,7 +192,7 @@ Get deeper suggestions based on a selected item from the journey cards.
 ```
 
 **Returns**:
-- 1 recommendation related to the selected item
+- 1 recommendation with metadata ( e.g movie, movie name, image, director, main cats, platform available, release year )
 
 ---
 
