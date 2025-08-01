@@ -235,30 +235,4 @@ Return recommendations that intentionally contrast with user's archetype.
 
 ---
 
-## ⚠️ Notes
 
-- Ensure your API keys are valid and usage limits aren't exceeded.
-- Free tier on Render may result in **cold starts** or **memory limits**.
-- Gemini responses may occasionally return malformed JSON — handled in code.
-
----
-
-## 🛠️ Future Improvements
-
-- Add Redis cache for faster lookups  
-- Enable batch archetype generation  
-- Enable Firebase usage for user-specific history storage  
-- Add authentication and logging middleware
-
----
-
-## 📃 License
-
-This project is licensed for hackathon/demo purposes only. For commercial usage, please ensure proper API licensing with Qloo and Google Gemini.
-
----
-
-## 👨‍💻 Maintainer
-
-Aravind Krishnan  
-[GitHub](https://github.com/aravindkrishnan515)
