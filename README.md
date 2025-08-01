@@ -132,7 +132,7 @@ Recommendations based on user's cultural archetype and selected category.
 ```
 
 **Returns**:
-- Items enjoyed by others with same archetype
+- Items which aligns with particular community people's taste and personality  
 
 ---
 
