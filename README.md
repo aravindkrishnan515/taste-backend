@@ -174,7 +174,7 @@ Suggest a day-long cultural journey from an opposite community's perspective.
 ```
 
 **Returns**:
-- Morning: music, Afternoon: podcast, Night: movie (from a different archetype)
+- Music for Morning, Podcasts for afternoon, Movie for Night (which opposite to user's archetype)
 
 ---
 
