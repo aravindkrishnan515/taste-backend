@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from recommendation import map_names_to_entity_ids, get_recommendations, get_single_example,  get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details, get_contrasting_examples, map_examples_to_entity_ids, get_recommendations_from_entity_ids, generate_descriptions_with_categories
+from recommendation import map_names_to_entity_ids, get_recommendations, get_single_example,  get_item_details, get_activity_recommendations_by_mood, get_genre_based_examples, merge_and_map_entity_ids, get_recommendations_for_activities, get_community_example, find_entity_id, fetch_individual_recommendation, get_opposite_community_journey_cards, get_examples_for_user_and_friends, enrich_recommendations_with_details, get_contrasting_examples, map_examples_to_entity_ids, get_recommendations_from_entity_ids, generate_descriptions_with_categories, generate_group_descriptions
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -57,41 +57,52 @@ ENTITY_TYPE_MAP = {
 @app.route('/save-preferences', methods=['POST'])
 def save_preferences():
     data = request.get_json()
+    active_category = data.get("activeCategory")
+    example_category = data.get("exampleCategory")
     preference = data.get("preference")
-    category = data.get("activeCategory", "movies").lower()
 
-    print(f"\n===== Generating recommendations for preference: '{preference}' in category: '{category}' =====")
+    print(f"\n===== Per-preference flow: activeCategory='{active_category}', exampleCategory='{example_category}', preference='{preference}' =====")
 
-    # Step 1: Get example seeds
-    example_response = get_single_example(category, preference)
+    # Step 1: Get 2 examples from the preference
+    example_response = get_single_example(example_category, preference)
     seed_examples = example_response.get("recommendations", [])
 
-    if not seed_examples:
+    if not seed_examples or len(seed_examples) < 2:
         return jsonify({
             "status": "error",
-            "message": "No seed examples generated.",
-            "recommendations": []
+            "message": "Failed to get 2 seed examples",
+            "title": "Error",
+            "recommendations": [],
+            "description": "Unable to generate recommendations",
+            "activeCategory": active_category
         }), 500
 
-    entity_type = ENTITY_TYPE_MAP.get(category)
+    # Step 2: Get entity IDs and fetch metadata for both recommendations
+    active_entity_type = ENTITY_TYPE_MAP.get(active_category.lower())
+    example_entity_type = ENTITY_TYPE_MAP.get(example_category.lower())
     all_recommendations = []
-
-    # Step 2: For each seed example, get recommendations
+    
     for example in seed_examples:
         try:
-            entity_id = find_entity_id(example, entity_type)
-            recs = fetch_individual_recommendation(entity_id, entity_type, take=5)
-            all_recommendations.append(recs)
+            entity_id = find_entity_id(example, example_entity_type)
+            if entity_id:
+                # Get metadata (name, image)
+                metadata = fetch_individual_recommendation(entity_id, active_entity_type, take=1)
+                if metadata:
+                    all_recommendations.extend(metadata)
         except Exception as e:
-            print(f"❌ Failed to fetch recommendations for example '{example}': {e}")
-            all_recommendations.append([])
+            print(f"❌ Failed to get metadata for '{example}': {e}")
+    
+    
 
+    # Step 3: Generate group title and description
+    group_info = generate_group_descriptions(active_category, all_recommendations)
+    
     return jsonify({
-        "status": "success",
-        "category": category,
-        "preference": preference,
-        "seed_examples": seed_examples,
-        "recommendations": all_recommendations  # List of 2 × 5-item groups
+        "title": group_info.get("title", "Curated Selection"),
+        "recommendations": all_recommendations,
+        "description": group_info.get("description", "A thoughtfully curated selection for you."),
+        "activeCategory": active_category
     }), 200
 
 

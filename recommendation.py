@@ -275,7 +275,63 @@ def get_recommendations(target_category, entity_id_json, take=3):
 
     return {target_category: grouped_recommendations}
 
+def generate_group_descriptions(category, all_recommendations):
+    """
+    Generate a single group title and description for the given recommendations.
+    Returns a dict with 'title' and 'description' keys.
+    """
+    item_names = [item["name"] for item in all_recommendations if item.get("name")]
+    
+    if not item_names:
+        return {
+            "title": "Curated Selection",
+            "description": "A thoughtfully curated selection for you."
+        }
 
+    prompt = f"""You are a smart recommendation assistant.
+
+Here is a group of {category.replace('_', ' ')} titles:
+{json.dumps(item_names, indent=2)}
+
+Your task:
+1. Analyze the **tone, genre, vibe, or emotional theme** these titles share.
+2. Write a **short, catchy group title** that captures that shared feeling or category. (Max 5–7 words)
+3. Write a **1–2 sentence description** that explains what the experience is like when someone consumes this group — emotionally, stylistically, or narratively.
+
+Format:
+Title: <group title>
+Description: <group description>
+Don't list the names again.
+Be warm and natural. Avoid dry or overly technical language.
+"""
+
+    try:
+        response = model.generate_content(prompt)
+        raw_text = response.text.strip()
+
+        # Parse Title and Description from Gemini response
+        title = ""
+        description = ""
+        for line in raw_text.splitlines():
+            if line.lower().startswith("title:"):
+                title = line.split(":", 1)[1].strip()
+            elif line.lower().startswith("description:"):
+                description = line.split(":", 1)[1].strip()
+
+        if not title or not description:
+            raise ValueError("Could not parse Gemini response.")
+
+        return {
+            "title": title,
+            "description": description
+        }
+
+    except Exception as e:
+        print(f"Gemini API error for {category} group: {e}")
+        return {
+            "title": "Curated Selection",
+            "description": "A thoughtfully curated selection for you."
+        }
 
 def get_item_details(category: str, name: str):
     
