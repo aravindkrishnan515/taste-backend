@@ -47,16 +47,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Add Environment Variables
-
-Set the following environment variables in your terminal or `.env` file:
-
-```bash
-export GOOGLE_API_KEY=<your_gemini_api_key>
-export QLOO_API_KEY=<your_qloo_api_key>
-```
-
-### 5. Run the Server
+### 4. Run the Server
 
 ```bash
 python app.py
